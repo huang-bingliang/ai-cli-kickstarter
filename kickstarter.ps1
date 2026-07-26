@@ -99,6 +99,10 @@ function Read-Answer([string]$Prompt) {
     } else {
         $value = Read-Host $Prompt
     }
+    if ($null -ne $value) {
+        # Some redirected-input hosts prefix the first answer with a UTF-8 BOM.
+        $value = ([string]$value).TrimStart([char]0xFEFF)
+    }
     return [pscustomobject]@{
         IsEof = ($null -eq $value)
         Value = if ($null -eq $value) { "" } else { [string]$value }
