@@ -229,7 +229,12 @@ while ($true) {
             Write-Host "`n  [1] 中文`n  [2] English`n"
             $answer = Read-Answer ">"
             if ($answer.IsEof) { exit 1 }
-            $c = $answer.Value
+            $c = $answer.Value.Trim()
+            # A UTF-8 BOM can be decoded as non-ASCII mojibake by older hosts.
+            # Only the first, non-sensitive 1/2 menu tolerates that prefix.
+            if ($c -match "^[^0-9A-Za-z]*([12])$") {
+                $c = $Matches[1]
+            }
             if ($c -eq "1") { $Language="zh"; $State="PROBE" }
             elseif ($c -eq "2") { $Language="en"; $State="PROBE" }
             else { Start-Sleep -Milliseconds 250 }

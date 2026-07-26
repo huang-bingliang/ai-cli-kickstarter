@@ -129,6 +129,13 @@ try {
     Add-Check "exits with nonzero status" ($result.ExitCode -ne "timeout" -and $result.ExitCode -ne 0) $result
     Add-Check "does not run the installer" (-not (Test-OutputMatch $result "Running the official installer")) $result
 
+    Write-Host "== mojibake BOM before language choice is ignored =="
+    $bomMojibake = "{0}{1}{2}" -f [char]0x00EF, [char]0x00BB, [char]0x00BF
+    $result = Invoke-KickstarterCase -InputText ($bomMojibake + "2`n2`n`n`n") -Mode missing
+    Add-Check "selects English despite the preamble" (Test-OutputMatch $result "Choose a kickstarter") $result
+    Add-Check "uses the selected Kimi installer" (Test-OutputMatch $result "https://code.kimi.com/kimi-code/install.ps1") $result
+    Add-Check "exits cleanly" ($result.ExitCode -eq 0) $result
+
     Write-Host "== failed download reaches the ERROR state =="
     $result = Invoke-KickstarterCase -InputText "2`n1`n3`n`n" -Mode fail
     Add-Check "reports installation failure" (Test-OutputMatch $result "Installation failed") $result
