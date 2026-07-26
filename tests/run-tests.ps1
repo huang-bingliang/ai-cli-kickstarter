@@ -87,7 +87,10 @@ exit `$LASTEXITCODE
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $startInfo
     [void]$process.Start()
-    $process.StandardInput.Write($InputText)
+    # Write raw ASCII so hosted runners cannot prefix the first answer with a
+    # UTF-8 BOM. Every scripted answer in this test suite is ASCII.
+    $inputBytes = [Text.Encoding]::ASCII.GetBytes($InputText)
+    $process.StandardInput.BaseStream.Write($inputBytes, 0, $inputBytes.Length)
     $process.StandardInput.Close()
 
     $timedOut = -not $process.WaitForExit(15000)
