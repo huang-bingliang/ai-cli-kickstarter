@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+jobs:
+  lint-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck kickstarter.sh Start-Linux.sh Start-macOS.command tests/run-tests.sh tests/check-provider-urls.sh tests/stubs/curl tests/stubs/uname
+
+  test-bash:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/run-tests.sh
+
+  lint-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: pwsh
+        # Write-Host and Invoke-Expression are intrinsic to an interactive
+        # console installer, so Write-Host is excluded.
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          Invoke-ScriptAnalyzer -Path kickstarter.ps1 -Severity Warning -ExcludeRule PSAvoidUsingWriteHost -EnableExit
+          Invoke-ScriptAnalyzer -Path tests/run-tests.ps1 -Severity Warning -ExcludeRule PSAvoidUsingWriteHost -EnableExit
+      - shell: powershell
+        run: .\tests\run-tests.ps1
+
+  check-provider-urls:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/check-provider-urls.sh

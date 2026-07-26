@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Keep state-machine tests deterministic on Linux, macOS, and Git Bash.
+printf 'Linux\n'

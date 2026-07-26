@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Test stub for curl. Probe URLs report HTTP 204; installer downloads
+# write a local marker script and report a deterministic final URL.
+url=""
+output=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o|--output)
+      output="$2"
+      shift 2;;
+    *)
+      url="$1"
+      shift;;
+  esac
+done
+
+case "$url" in
+  *generate_204*)
+    printf '204';;
+  *)
+    if [ "${CURL_STUB_MODE:-ok}" = "fail" ]; then exit 6; fi
+    if [ "${CURL_STUB_MODE:-ok}" = "installed" ]; then
+      cat > "$output" <<'INSTALLER'
+#!/usr/bin/env bash
+echo installer-ran
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/qwen" <<'COMMAND'
+#!/usr/bin/env bash
+echo qwen-test-version
+COMMAND
+chmod +x "$HOME/.local/bin/qwen"
+INSTALLER
+    else
+      printf '%s\n' '#!/usr/bin/env bash' 'echo installer-ran' > "$output"
+    fi
+    if [ "${CURL_STUB_MODE:-ok}" = "redirect" ]; then
+      printf 'https://example.invalid/installer.sh'
+    else
+      printf '%s' "$url"
+    fi;;
+esac
